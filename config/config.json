@@ -7,7 +7,7 @@
   "request_period": 5,
   "postgres": {
     "host": "localhost",
-    "port": 5432,
+    "port": "5432",
     "db_name": "postgres",
     "user_name": "postgres",
     "pwd": "postgres"

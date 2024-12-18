@@ -9,15 +9,15 @@ import (
 
 type cfg struct {
 	RSS           []string `json:"rss"`
-	requestPeriod int      `json:"request_period"`
+	RequestPeriod int      `json:"request_period"`
 	Timeout       time.Duration
 	Postgres      struct {
 		DSN      string
-		host     string `json:"host" env-default:"postgres"`
-		port     string `json:"port" env-default:"5432"`
-		dbname   string `json:"db_name" env-default:"postgres"`
-		username string `json:"user_name" env-default:"postgres"`
-		pwd      string `json:"pwd" env-default:"postgres"`
+		Host     string `json:"host" env-default:"postgres"`
+		Port     string `json:"port" env-default:"5432"`
+		Dbname   string `json:"db_name" env-default:"postgres"`
+		Username string `json:"user_name" env-default:"postgres"`
+		Pwd      string `json:"pwd" env-default:"postgres"`
 	} `json:"postgres"`
 }
 
@@ -26,9 +26,9 @@ func config() cfg {
 	if err := cleanenv.ReadConfig("./config/config.json", &configs); err != nil {
 		log.Println("cannot read configs")
 	}
-	configs.Postgres.DSN = fmt.Sprintf("%s://%s:%s@%s:%s/%s?sslmode=disable", configs.Postgres.dbname, configs.Postgres.username,
-		configs.Postgres.pwd, configs.Postgres.host, configs.Postgres.port, configs.Postgres.dbname)
-	configs.Timeout = time.Duration(configs.requestPeriod) * time.Minute
+	configs.Postgres.DSN = fmt.Sprintf("%s://%s:%s@%s:%s/%s?sslmode=disable", configs.Postgres.Dbname, configs.Postgres.Username,
+		configs.Postgres.Pwd, configs.Postgres.Host, configs.Postgres.Port, configs.Postgres.Dbname)
+	configs.Timeout = time.Duration(configs.RequestPeriod) * time.Minute
 	return configs
 }
 

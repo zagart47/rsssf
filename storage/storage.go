@@ -3,25 +3,22 @@ package storage
 import (
 	"context"
 
-	"tasktrackerbot/internal/entity"
-	"tasktrackerbot/internal/storage/postgresql"
+	"rsssf/entity"
+	"rsssf/storage/postgres"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type Tasks interface {
-	CreateTask(ctx context.Context, task entity.Task) (int64, error)
-	GetTaskByID(ctx context.Context, id int64) (entity.Task, error)
-	GetTasksByUserID(ctx context.Context, userID int64) ([]entity.Task, error)
-	GetUnsentTasks(ctx context.Context) ([]entity.Task, error)
-	MarkTaskAsSent(ctx context.Context, taskID int64) error
+type Posts interface {
+	AddPosts(context.Context, []entity.Post) error
+	GetPosts(context.Context, int) ([]entity.Post, error)
 }
 
 type Storage struct {
-	Tasks Tasks
+	Posts Posts
 }
 
 func NewStorages(db *pgxpool.Pool) Storage {
-	storage := postgresql.NewTaskStorage(db)
-	return Storage{Tasks: &storage}
+	storage := postgres.NewPostStorage(db)
+	return Storage{Posts: &storage}
 }

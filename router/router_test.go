@@ -14,8 +14,11 @@ func TestFetchRSSWithHabrGoHub(t *testing.T) {
 	// Канал для получения результатов
 	ch := make(chan []entity.Post, 1)
 
+	// Канал для получения ошибок
+	errCh := make(chan error, 1)
+
 	// Вызываем функцию fetchRSS с реальным URL
-	go fetchRSS(habrRSSURL, ch)
+	go fetchRSS(habrRSSURL, ch, errCh)
 
 	// Ждем результата
 	select {

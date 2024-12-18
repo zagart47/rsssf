@@ -100,25 +100,34 @@ func (r *Router) UpdateNews() {
 	for {
 		rss := config.Configs.RSS
 		ch := make(chan []entity.Post, len(rss))
-		var wg sync.WaitGroup // Используем WaitGroup для ожидания завершения горутин
+		errCh := make(chan error, len(rss)) // Канал для обработки ошибок
+		var wg sync.WaitGroup               // Используем WaitGroup для ожидания завершения горутин
 
 		for _, url := range rss {
 			wg.Add(1)
 			go func(url string) {
 				defer wg.Done()
-				fetchRSS(url, ch)
+				fetchRSS(url, ch, errCh) // Используем новую функцию с обработкой ошибок
 			}(url) // Передаем url как аргумент
 		}
 
-		// Запускаем горутину для закрытия канала после завершения всех горутин
+		// Запускаем горутину для закрытия каналов после завершения всех горутин
 		go func() {
 			wg.Wait()
 			close(ch)
+			close(errCh)
 		}()
 
 		var allNews []entity.Post
 		for items := range ch {
 			allNews = append(allNews, items...)
+		}
+
+		// Обрабатываем ошибки
+		for err := range errCh {
+			if err != nil {
+				log.Println("Error fetching RSS:", err)
+			}
 		}
 
 		// Создаем контекст с таймаутом
@@ -135,26 +144,27 @@ func (r *Router) UpdateNews() {
 	}
 }
 
-func fetchRSS(url string, ch chan<- []entity.Post) {
+func fetchRSS(url string, ch chan<- []entity.Post, errCh chan<- error) {
 	resp, err := http.Get(url)
 	if err != nil {
-		fmt.Printf("Error fetching %s: %v\n", url, err)
+		errCh <- fmt.Errorf("error fetching %s: %w", url, err)
 		return
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Printf("Error reading response body from %s: %v\n", url, err)
+		errCh <- fmt.Errorf("error reading response body from %s: %w", url, err)
 		return
 	}
 
 	var rss entity.RSS
 	err = xml.Unmarshal(body, &rss)
 	if err != nil {
-		fmt.Printf("Error unmarshalling XML from %s: %v\n", url, err)
+		errCh <- fmt.Errorf("error unmarshalling XML from %s: %w", url, err)
 		return
 	}
+
 	layouts := []string{
 		"Mon, 02 Jan 2006 15:04:05 GMT",
 		"Mon, 2 Jan 2006 15:04:05 -0700",
@@ -177,7 +187,7 @@ func fetchRSS(url string, ch chan<- []entity.Post) {
 			}
 		}
 		if err != nil {
-			fmt.Printf("Error parsing date from %v: %v\n", item.PubDate, err)
+			errCh <- fmt.Errorf("error parsing date from %v: %w", item.PubDate, err)
 			continue // Пропускаем элемент, если дата не распарсена
 		}
 
